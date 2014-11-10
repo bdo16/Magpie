@@ -37,6 +37,16 @@ public class Magpie
     {
       response = "Say something, please.";
     }
+    else if (findKeyword(statement, "I will") >= 0
+               || findKeyword(statement, "you will") >= 0
+               || findKeyword(statement, "it will") >= 0
+               || findKeyword(statement, "he will") >= 0
+               || findKeyword(statement, "she will") >= 0
+               || findKeyword(statement, "we will") >= 0
+               || findKeyword(statement, "they will") >= 0)
+    {
+      response = "How can you be so sure of the future?";
+    }
     else if (findKeyword(statement,"mr. kiang") >= 0
                || findKeyword(statement, "mr. landgraf") >= 0)
     {
@@ -73,6 +83,12 @@ public class Magpie
     }
     
     // Responses which require transformations
+       
+    //Look for a (I am <something>) pattern
+    else if (findKeyword(statement, "I am", 0) >= 0)
+    {
+      response = transformIAmStatement(statement);
+    }
     
     //Look for a two word (I <something> you) pattern
     else if (findKeyword(statement, "i", 0) >= 0 && findKeyword(statement, "you", findKeyword(statement, "i", 0)) >= 0)
@@ -97,13 +113,7 @@ public class Magpie
     {
       response = transformYouMeStatement(statement);
     }
-    
-    //Look for a (I am <something>) pattern
-    else if (findKeyword(statement, "I am", 0) >= 0)
-    {
-      response = transformIAmStatement(statement);
-    }
-    
+
     //else returns default response
     else
     {
