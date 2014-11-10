@@ -98,6 +98,12 @@ public class Magpie
       response = transformYouMeStatement(statement);
     }
     
+    //Look for a (I am <something>) pattern
+    else if (findKeyword(statement, "I am", 0) >= 0)
+    {
+      response = transformIAmStatement(statement);
+    }
+    
     //else returns default response
     else
     {
@@ -137,6 +143,27 @@ public class Magpie
     int psn = findKeyword(statement, "I want", 0);
     String restOfStatement = statement.substring(psn + 6).trim();
     return "Would you really be happy if you had " + restOfStatement + "?";
+  }
+  
+  
+ /**
+   * Take a statement with "I am <something>." and transform it into 
+   * "Do you like being <something>?"
+   * In case it uses the "I am <verb>ing to" pattern, it returns a default response
+   */
+  private String transformIAmStatement(String statement)
+  {
+    if (statement.indexOf("ing") >= 0) // checks if it's not in "I am <non-gerund>"
+      return getRandomResponse();
+    statement = statement.trim();
+    String lastChar = statement.substring(statement.length() - 1);
+    if (lastChar.equals("."))
+    {
+      statement = statement.substring(0, statement.length() - 1);
+    }
+    int psn = findKeyword(statement, "I am", 0);
+    String restOfStatement = statement.substring(psn + 4).trim();
+    return "Do you like being " + restOfStatement + "?";
   }
   
   /**
@@ -283,5 +310,7 @@ public class Magpie
     "You don't say.",
     "Uh huh.",
     "I see.",
+    "If you say so.",
+    "Is that so."
   };
 }
