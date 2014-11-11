@@ -403,6 +403,12 @@ public class Magpie
       statement = statement.substring(0, statement.length() - 1);
     }
     int psn = findKeyword(statement, "You are", 0);
+    if (findKeyword(statement, "me", psn) > 0) { // if the sentence has "me" after "You are"
+      int metoyou = findKeyword(statement, "me"); // "me" will be replaced with "you"
+      String youarestart = statement.substring(0,metoyou); // part before "me"
+      String youareend = statement.substring(metoyou + 2); // part after "me"
+      statement = youarestart + "you" + youareend;
+    }
     String restOfStatement = statement.substring(psn + 7).trim();
     return "How am I " + restOfStatement + "?";
   }
@@ -551,7 +557,7 @@ public class Magpie
     "Uh huh.",
     "I see.",
     "If you say so.",
-    "Is that so."
+    "Is that so.",
     "...."
   };
 }
