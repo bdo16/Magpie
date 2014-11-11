@@ -32,6 +32,7 @@ public class Magpie
    */
   public String getResponse(String temp)
   {
+    Random r = new Random ();
     String response = "";
     String statement = expandContraction(temp);
     if (statement.trim().length() == 0)
@@ -46,20 +47,38 @@ public class Magpie
                || findKeyword(statement, "we will") >= 0
                || findKeyword(statement, "they will") >= 0)
     {
-      response = "How can you be so sure of the future?";
+      String [] willresponse = {
+        "How can you be so sure of the future?",
+        "You never know what the future will bring.",
+        "An old Chinese proverb says the future is like the mist hovering over Mt. Song..."
+      };
+      response = willresponse[r.nextInt(willresponse.length)];
     }
     else if (findKeyword(statement, "thou") >= 0)
     {
-      response = "Are we in 16th century England?";
+      String [] thouresponse = {
+        "Are we in 16th century England?",
+        "Shakespeare called. He wants his words back."
+      };
+      response = thouresponse[r.nextInt(thouresponse.length)];
     }
     else if (findKeyword(statement, "ain't") >= 0)
     {
-      response = "Hey, we ain't needing no bad grammar yo.";
+      String [] aintresponse = {
+        "We ain't need no bad grammar here.",
+        "Don't you dare use that kind of language in front of me!",
+        "Watch your mouth."
+      };
+      response = aintresponse[r.nextInt(aintresponse.length)];
     }
     else if (findKeyword(statement,"mr. kiang") >= 0
                || findKeyword(statement, "mr. landgraf") >= 0)
     {
-      response = "Oh, he's a chill guy.";
+      String [] teacherresponse = {
+        "Oh, he's a chill guy.",
+        "Comp Sci is so much fun when he teaches!"
+      };
+      response = teacherresponse[r.nextInt(teacherresponse.length)];
     }
     else if (findKeyword(statement,"no")>= 0)
     {
@@ -67,16 +86,21 @@ public class Magpie
     }
     else if (findKeyword(statement,"bobby") >= 0)
     {
-      response = "Oh, Bobby? He's a cool guy, don't you think?";
+      response = "He's awesome, nuff said.";
     }
     else if (findKeyword(statement,"ting") >= 0)
     {
-      response = "Oh, Ting? I heard he's usually toast.";
+      String [] tingresponse = {
+        "He's toast.",
+        "He's pretty cool",
+        "He's usually toast, but sometimes cereal."
+      };
+      response = tingresponse[r.nextInt(tingresponse.length)];
     }
     else if (findKeyword(statement,"melanie") >= 0
                ||findKeyword(statement,"mel") >= 0)
     {
-      response = "Oh, Melanie? I heard she's an infinite elephant.";
+      response = "INFINITELEPHANT!!!";
     }
     else if (findKeyword(statement,"mother") >= 0
                || findKeyword(statement,"father") >= 0
@@ -97,6 +121,12 @@ public class Magpie
     else if (findKeyword(statement, "Why is", 0) == 0)
     {
       response = transformWhyIsStatement(statement);
+    }
+    
+    //Look for a (You are <something>) pattern
+    else if (findKeyword(statement, "You are", 0) >= 0)
+    {
+      response = transformYouAreStatement(statement);
     }
     
     //Look for a (I am <something>) pattern
@@ -297,7 +327,7 @@ public class Magpie
     //  Remove the final period, if there is one
     statement = statement.trim();
     String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
+    if (lastChar.equals("?"))
     {
       statement = statement.substring(0, statement.length() - 1);
     }
@@ -360,6 +390,22 @@ public class Magpie
     return "Do you like being " + restOfStatement + "?";
   }
   
+  /**
+   * Take a statement with "You are <something>." and transform it into 
+   * "How am I <something>?"
+   */
+  private String transformYouAreStatement(String statement)
+  {
+    statement = statement.trim();
+    String lastChar = statement.substring(statement.length() - 1);
+    if (lastChar.equals("."))
+    {
+      statement = statement.substring(0, statement.length() - 1);
+    }
+    int psn = findKeyword(statement, "You are", 0);
+    String restOfStatement = statement.substring(psn + 7).trim();
+    return "How am I " + restOfStatement + "?";
+  }
   /**
    * Take a statement with "you <something> me" and transform it into 
    * "What makes you think that I <something> you?"
@@ -493,8 +539,8 @@ public class Magpie
    */
   private String getRandomResponse ()
   {
-    Random r = new Random ();
-    return randomResponses [r.nextInt(randomResponses.length)];
+    Random q = new Random ();
+    return randomResponses [q.nextInt(randomResponses.length)];
   }
   
   private String [] randomResponses = {
@@ -506,5 +552,6 @@ public class Magpie
     "I see.",
     "If you say so.",
     "Is that so."
+    "...."
   };
 }
