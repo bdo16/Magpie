@@ -129,16 +129,16 @@ public class Magpie
       response = transformIsStatement(statement);
     }
     
-    //Look for a (<something> are <something>) pattern
-    else if (findKeyword(statement, "are", 0) >= 0)
-    {
-      response = transformAreStatement(statement);
-    }
-    
     //Look for a (You are <something>) pattern
     else if (findKeyword(statement, "You are", 0) >= 0)
     {
       response = transformYouAreStatement(statement);
+    }
+    
+    //Look for a (<something> are <something>) pattern
+    else if (findKeyword(statement, "are", 0) >= 0)
+    {
+      response = transformAreStatement(statement);
     }
     
     //Look for a (I am <something>) pattern
@@ -337,6 +337,7 @@ public class Magpie
   /**
    * Take a statement with "Why is <something>." and transform it into 
    * "Is <something>? I humbly suggest you go Google it."
+   * replaces the object "you" with "me", and the object "me" with "you"
    */
   private String transformWhyIsStatement(String statement)
   {
@@ -348,6 +349,12 @@ public class Magpie
       statement = statement.substring(0, statement.length() - 1);
     }
     int psn = findKeyword (statement, "Why is", 0);
+    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
+      statement = replaceMeWithYou(statement, psn); //replaces "me" with "you"
+    
+    else if (findKeyword(statement, "you", psn) > 0) { // if the sentence has "you" after "are"
+      statement = replaceYouWithMe(statement, psn); //replaces "you" with "me"
+    }
     String restOfStatement = statement.substring(psn + 6).trim();
     return "Is " + restOfStatement + "? I humbly suggest you go Google it.";
   }
@@ -368,24 +375,38 @@ public class Magpie
       statement = statement.substring(0, statement.length() - 1);
     }
     int psn = findKeyword (statement, "is", 0);
-      if (findKeyword(statement, "me", psn) > 0) { // if the sentence has "me" after "are"
-      int psnofme = findKeyword(statement, "me"); // "me" will be replaced with "you"
-      String ismebefore = statement.substring(0,psnofme); // part before "me"
-      String ismeafter = statement.substring(psnofme + 2); // part after "me"
-      statement = ismebefore + "you" + ismeafter;
-    }
+    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
+      statement = replaceMeWithYou(statement, psn); // replaces "me" with "you"
+    
     else if (findKeyword(statement, "you", psn) > 0) { // if the sentence has "you" after "are"
-      int psnofyou = findKeyword(statement, "you"); // "you" will be replaced with "me"
-      String isyoubefore = statement.substring(0,psnofyou); // part before "you"
-      String isyouafter = statement.substring(psnofyou + 3); // part after "you"
-      statement = isyoubefore + "me" + isyouafter;
+      statement = replaceYouWithMe(statement, psn); // replaces "you" with "me"
     }
     String isstart = statement.substring(0,psn);
     isstart = isstart.substring(0,1).toLowerCase() + isstart.substring(1); // lowercases the first part
     String isend = statement.substring(psn + 3);
     return "Why is " + isstart + isend + "?";
   }
-   
+  
+  /**
+   * Take a statement with "You are <something>." and transform it into 
+   * "How am I <something>?"
+   * If the object is "me", it is replaced with "you"
+   */
+  private String transformYouAreStatement(String statement)
+  {
+    statement = statement.trim();
+    String lastChar = statement.substring(statement.length() - 1);
+    if (lastChar.equals("."))
+    {
+      statement = statement.substring(0, statement.length() - 1);
+    }
+    int psn = findKeyword(statement, "You are", 0);
+    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
+      statement = replaceMeWithYou(statement, psn); // replaces "me" with "you"
+    String restOfStatement = statement.substring(psn + 7).trim();
+    return "How am I " + restOfStatement + "?";
+  }
+  
   /**
    * Take a statement with "<something1> are <something2>." and transform it into 
    * "Why are <something1> <something2>?"
@@ -403,23 +424,65 @@ public class Magpie
       statement = statement.substring(0, statement.length() - 1);
     }
     int psn = findKeyword (statement, "are", 0);
-    if (findKeyword(statement, "me", psn) > 0) { // if the sentence has "me" after "are"
-      int metoyou = findKeyword(statement, "me"); // "me" will be replaced with "you"
-      String youarestart = statement.substring(0,metoyou); // part before "me"
-      String youareend = statement.substring(metoyou + 2); // part after "me"
-      statement = youarestart + "you" + youareend;
-    }
+    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
+      statement = replaceMeWithYou(statement, psn); // replaces "me" with "you"
+    
     else if (findKeyword(statement, "you", psn) > 0) { // if the sentence has "you" after "are"
-      int youtome = findKeyword(statement, "you"); // "you" will be replaced with "me"
-      String youbefore = statement.substring(0,youtome); // part before "you"
-      String youafter = statement.substring(youtome + 3); // part after "you"
-      statement = youbefore + "me" + youafter;
+      statement = replaceYouWithMe(statement, psn); // replaces "you" with "me"
     }
     String isstart = statement.substring(0,psn);
     isstart = isstart.substring(0,1).toLowerCase() + isstart.substring(1); // lowercases the first part
     String isend = statement.substring(psn + 4);
     return "Why are " + isstart + isend + "?";
   } 
+  
+  /**
+   * Take a statement with "I am <something>." and transform it into 
+   * "Do you like being <something>?"
+   * In case it uses the "I am <verb>ing to" pattern, it returns a default response
+   * it replaces the object "you" with "me", and "me" with "you"
+   */
+  private String transformIAmStatement(String statement)
+  {
+    if (statement.indexOf("ing") >= 0) // checks if it's not in "I am <non-gerund>"
+      return getRandomResponse();
+    statement = statement.trim();
+    String lastChar = statement.substring(statement.length() - 1);
+    if (lastChar.equals("."))
+    {
+      statement = statement.substring(0, statement.length() - 1);
+    }
+    int psn = findKeyword(statement, "I am", 0);
+    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
+      statement = replaceMeWithYou(statement, psn); // replaces "me" with "you"
+    
+    else if (findKeyword(statement, "you", psn) > 0) { // if the sentence has "you" after "are"
+      statement = replaceYouWithMe(statement, psn); // replaces "you" with "me"
+    }
+    String restOfStatement = statement.substring(psn + 4).trim();
+    return "Do you like being " + restOfStatement + "?";
+  }
+  
+  /**
+   * Take a statement with "I <something> you." and transform it into 
+   * "Why do you <something> me?"
+   */
+  private String transformIYouStatement(String statement)
+  {
+    //  Remove the final period, if there is one
+    statement = statement.trim();
+    String lastChar = statement.substring(statement.length() - 1);
+    if (lastChar.equals("."))
+    {
+      statement = statement.substring(0, statement.length() - 1);
+    }
+    
+    int psnOfI = findKeyword (statement, "i", 0);
+    int psnOfYou = findKeyword (statement, "you", psnOfI + 1);
+    
+    String restOfStatement = statement.substring(psnOfI + 1, psnOfYou).trim();
+    return "Why do you " + restOfStatement + " me?";
+  }
   
   /**
    * Take a statement with "I want to <something>." and transform it into 
@@ -458,51 +521,6 @@ public class Magpie
     return "Would you really be happy if you had " + restOfStatement + "?";
   }
   
-  
-  /**
-   * Take a statement with "I am <something>." and transform it into 
-   * "Do you like being <something>?"
-   * In case it uses the "I am <verb>ing to" pattern, it returns a default response
-   */
-  private String transformIAmStatement(String statement)
-  {
-    if (statement.indexOf("ing") >= 0) // checks if it's not in "I am <non-gerund>"
-      return getRandomResponse();
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    int psn = findKeyword(statement, "I am", 0);
-    String restOfStatement = statement.substring(psn + 4).trim();
-    return "Do you like being " + restOfStatement + "?";
-  }
-  
-  /**
-   * Take a statement with "You are <something>." and transform it into 
-   * "How am I <something>?"
-   * If the object is "me", it is replaced with "you"
-   */
-  private String transformYouAreStatement(String statement)
-  {
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    int psn = findKeyword(statement, "You are", 0);
-     if (findKeyword(statement, "me", psn) > 0) { // if the sentence has "me" after "are"
-      int metoyou = findKeyword(statement, "me"); // "me" will be replaced with "you"
-      String youarestart = statement.substring(0,metoyou); // part before "me"
-      String youareend = statement.substring(metoyou + 2); // part after "me"
-      statement = youarestart + "you" + youareend;
-    }
-    String restOfStatement = statement.substring(psn + 7).trim();
-    return "How am I " + restOfStatement + "?";
-  }
-  
   /**
    * Take a statement with "you <something> me" and transform it into 
    * "What makes you think that I <something> you?"
@@ -526,27 +544,25 @@ public class Magpie
     return "What makes you think that I " + restOfStatement + " you?";
   }
   
-  /**
-   * Take a statement with "I <something> you." and transform it into 
-   * "Why do you <something> me?"
-   */
-  private String transformIYouStatement(String statement)
-  {
-    //  Remove the final period, if there is one
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    
-    int psnOfI = findKeyword (statement, "i", 0);
-    int psnOfYou = findKeyword (statement, "you", psnOfI + 1);
-    
-    String restOfStatement = statement.substring(psnOfI + 1, psnOfYou).trim();
-    return "Why do you " + restOfStatement + " me?";
+  //replaces the object "me" found after the verb with "you"
+  //psn is the position of the verb, to make sure "me" is an object
+  // In the sentence "He is mean to me", "me" is after the verb "is"
+  private String replaceMeWithYou (String statement, int psn) {
+    int psnofme = findKeyword(statement, "me");
+    String beforeme = statement.substring(0,psnofme); //part before "me"
+    String afterme = statement.substring(psnofme + 2); //part after "me"
+    return beforeme + "you" + afterme;
   }
   
+  //replaces the object "you" found after the verb with "me"
+  //psn is the position of the verb, to make sure "you" is an object
+  // In the sentence "He is mean to you", "you" is after the verb "is"
+  private String replaceYouWithMe(String statement, int psn) {
+    int psnofyou = findKeyword(statement, "you"); // "you" will be replaced with "me"
+    String beforeyou = statement.substring(0,psnofyou); // part before "you"
+    String afteryou = statement.substring(psnofyou + 3); // part after "you"
+    return beforeyou + "me" + afteryou;
+  }
   
   /**
    * Search for one word in phrase. The search is not case
