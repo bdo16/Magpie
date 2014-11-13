@@ -34,25 +34,10 @@ public class Magpie
   {
     Random r = new Random ();
     String response = "";
-    String statement = expandContraction(temp);
+    String statement = expandContraction(temp); //expands contractions
     if (statement.trim().length() == 0)
     {
       response = "Say something, please.";
-    }
-    else if (findKeyword(statement, "I will") >= 0
-               || findKeyword(statement, "you will") >= 0
-               || findKeyword(statement, "it will") >= 0
-               || findKeyword(statement, "he will") >= 0
-               || findKeyword(statement, "she will") >= 0
-               || findKeyword(statement, "we will") >= 0
-               || findKeyword(statement, "they will") >= 0)
-    {
-      String [] willresponse = {
-        "How can you be so sure of the future?",
-        "You never know what the future will bring.",
-        "An old Chinese proverb says the future is like the mist hovering over Mt. Song..."
-      };
-      response = willresponse[r.nextInt(willresponse.length)];
     }
     else if (findKeyword(statement, "thou") >= 0)
     {
@@ -92,8 +77,8 @@ public class Magpie
     {
       String [] tingresponse = {
         "He's toast.",
-        "He's pretty cool",
-        "He's usually toast, but sometimes cereal."
+        "He's pretty cool.",
+        "He's usually toast, but sometimes bread."
       };
       response = tingresponse[r.nextInt(tingresponse.length)];
     }
@@ -117,6 +102,17 @@ public class Magpie
     
     // Responses which require transformations
     
+    //Look for a (I/You/we/they <aux verb>(optional) <verb>) pattern
+    
+    else if (findKeyword(statement, "I") == 0 || 
+             findKeyword(statement, "You") == 0 ||
+             findKeyword(statement, "they") == 0 ||
+             findKeyword(statement, "we") == 0 )
+             //statement.substring(statement.indexOf(" ") - 1, statement.indexOf(" ")) == "s" 
+             //working on code that will check to see if it is a plural noun (Monkeys)
+    {
+      response = transformPluralVerbStatement(statement);
+    }
     //Look for a (Why is <something>) pattern
     else if (findKeyword(statement, "Why is", 0) == 0)
     {
@@ -129,48 +125,6 @@ public class Magpie
       response = transformIsStatement(statement);
     }
     
-    //Look for a (You are <something>) pattern
-    else if (findKeyword(statement, "You are", 0) >= 0)
-    {
-      response = transformYouAreStatement(statement);
-    }
-    
-    //Look for a (<something> are <something>) pattern
-    else if (findKeyword(statement, "are", 0) >= 0)
-    {
-      response = transformAreStatement(statement);
-    }
-    
-    //Look for a (I am <something>) pattern
-    else if (findKeyword(statement, "I am", 0) >= 0)
-    {
-      response = transformIAmStatement(statement);
-    }
-    
-    //Look for a two word (I <something> you) pattern
-    else if (findKeyword(statement, "I", 0) >= 0 && findKeyword(statement, "you", findKeyword(statement, "i", 0)) >= 0)
-    {
-      response = transformIYouStatement(statement);
-    }
-    
-    //Look for a (I want to <something>) pattern
-    else if (findKeyword(statement, "I want to", 0) >= 0)
-    {
-      response = transformIWantToStatement(statement);
-    }
-    
-    //Look for a (I want <something>) pattern
-    else if (findKeyword(statement, "I want", 0) >= 0)
-    {
-      response = transformIWantStatement(statement);
-    }
-    
-    //Look for a (You <something> me) pattern
-    else if (findKeyword(statement, "you", 0) >= 0 && findKeyword(statement, "me", findKeyword(statement, "you", 0)) >= 0)
-    {
-      response = transformYouMeStatement(statement);
-    }
-    
     //else returns default response
     else
     {
@@ -178,6 +132,7 @@ public class Magpie
     }
     return response;
   }
+  
   
   
   
@@ -334,6 +289,104 @@ public class Magpie
     return temp;
   }
   
+  
+  
+  
+  
+  /**
+   *transforms a "<plural noun> <aux> <statement>" statement to "Why <aux> <plural> <statement>?"
+   * for example, "I will eat pie" becomes "Why will you eat pie?"
+   */
+  private String transformPluralVerbStatement(String statement) // for a I <aux> <verb> statement
+  {
+    statement = statement.trim();
+    String statementsubject = ""; // the subject in the sentence (*I* eat cake)
+    String subject = ""; // the subject used in the response (Why do *you* eat cake?)
+    if (findKeyword(statement, "I") == 0)
+    {
+      statementsubject = "I";
+      subject = "you";
+    }
+    if (findKeyword(statement, "You") == 0)
+    {
+      statementsubject = "you";
+      subject = "I";
+    }
+    if (findKeyword(statement, "They") == 0)
+    {
+      statementsubject = "they";
+      subject = "they";
+    }
+    if (findKeyword(statement, "we") == 0)
+    {
+      statementsubject = "we";
+      subject = "we";
+    }
+    /**
+    *
+    *  else { // just a plural subject (Monkeys eat pie)
+    *    statementsubject = statement.substring(0, statement.indexOf(" "));
+    *    subject = statement.substring(0, statement.indexOf(" "));
+    *  }
+    */
+    String restofsentence = "";
+    String auxiliary = "do";
+    String lastChar = statement.substring(statement.length() - 1);
+    if (lastChar.equals("."))
+    {
+      statement = statement.substring(0, statement.length() - 1);
+    }
+    
+    String willbreak = "break";
+    while (willbreak == "break") { // used to 
+      
+      String [] auxiliaryverbs = {
+        "do",
+        "can",
+        "could",
+        "might",
+        "must",
+        "shall",
+        "will",
+        "would",
+        "are" // will not be tested for "you" as the subject
+      };
+      
+      if (findKeyword(statement, "I am") == 0){ // if the statement begins with (I am hungry)
+        auxiliary = "are"; // the response should be "Why *are* you hungry"
+        statement = replaceYouOrMe(statement, 1);
+        restofsentence = statement.substring(findKeyword(statement, "am") + 2); // the " hungry" part
+        break;
+      }
+      
+      if (findKeyword(statement, "You are") == 0){ // if the statement begins with (You are hungry)
+        auxiliary = "am"; // the response should be "Why *am* I hungry"
+        statement = replaceYouOrMe(statement, 1);
+        restofsentence = statement.substring(findKeyword(statement, "are") + 3); // the " hungry" part
+        break;
+      }
+      
+      for (int i = 0; i < auxiliaryverbs.length; i++) {
+        if (findKeyword(statement, auxiliaryverbs[i]) == statementsubject.length() + 1){ // if there is the aux verb
+          auxiliary = auxiliaryverbs[i];
+          statement = replaceYouOrMe(statement, 1);
+          restofsentence = statement.substring(findKeyword(statement, auxiliaryverbs[i]) + auxiliaryverbs[i].length());
+          break;  
+        }
+        else
+          statement = replaceYouOrMe(statement, 1);
+        restofsentence = statement.substring(statementsubject.length());
+      }
+      willbreak = "notbreak";
+    } 
+    
+    return "Why " + auxiliary + " " + subject + restofsentence + "?";
+    }
+  
+  
+  
+  
+  
   /**
    * Take a statement with "Why is <something>." and transform it into 
    * "Is <something>? I humbly suggest you go Google it."
@@ -349,15 +402,13 @@ public class Magpie
       statement = statement.substring(0, statement.length() - 1);
     }
     int psn = findKeyword (statement, "Why is", 0);
-    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
-      statement = replaceMeWithYou(statement, psn); //replaces "me" with "you"
-    
-    else if (findKeyword(statement, "you", psn) > 0) { // if the sentence has "you" after "are"
-      statement = replaceYouWithMe(statement, psn); //replaces "you" with "me"
-    }
+    statement = replaceYouOrMe(statement, psn);
     String restOfStatement = statement.substring(psn + 6).trim();
     return "Is " + restOfStatement + "? I humbly suggest you go Google it.";
   }
+  
+  
+  
   
   /**
    * Take a statement with "<something1> is <something2>." and transform it into 
@@ -375,194 +426,58 @@ public class Magpie
       statement = statement.substring(0, statement.length() - 1);
     }
     int psn = findKeyword (statement, "is", 0);
-    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
-      statement = replaceMeWithYou(statement, psn); // replaces "me" with "you"
-    
-    else if (findKeyword(statement, "you", psn) > 0) { // if the sentence has "you" after "are"
-      statement = replaceYouWithMe(statement, psn); // replaces "you" with "me"
-    }
+    statement = replaceYouOrMe(statement, psn);
     String isstart = statement.substring(0,psn);
     isstart = isstart.substring(0,1).toLowerCase() + isstart.substring(1); // lowercases the first part
     String isend = statement.substring(psn + 3);
     return "Why is " + isstart + isend + "?";
   }
   
-  /**
-   * Take a statement with "You are <something>." and transform it into 
-   * "How am I <something>?"
-   * If the object is "me", it is replaced with "you"
-   */
-  private String transformYouAreStatement(String statement)
-  {
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    int psn = findKeyword(statement, "You are", 0);
-    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
-      statement = replaceMeWithYou(statement, psn); // replaces "me" with "you"
-    String restOfStatement = statement.substring(psn + 7).trim();
-    return "How am I " + restOfStatement + "?";
-  }
   
-  /**
-   * Take a statement with "<something1> are <something2>." and transform it into 
-   * "Why are <something1> <something2>?"
-   * In case the object is "me", it is changed to "you"
-   * For example, the response to "They are mean to me" is "Why are they mean to you?" 
-   * If the object is "you", it is changed to "me"
-   */
-  private String transformAreStatement(String statement)
-  {
-    //  Remove the final period, if there is one
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
+  
+  
+  
+  //checks from the starting index psn and switches all "you"s and "me"s
+  private String replaceYouOrMe (String statement, int psn) {     
+    int psnofyoume = psn;
+    while (findKeyword(statement, "me", psnofyoume) > 0 || findKeyword(statement, "you", psnofyoume) > 0)
     {
-      statement = statement.substring(0, statement.length() - 1);
+      String whichisfirst = ""; // "me" if "me" comes first, and "" if "you" comes first
+      Boolean meishere = false; //whether "me" is found from the index psnofyoume
+      Boolean youishere = false;//whether "you" is found from the index psnofyoume
+      if (findKeyword(statement, "me", psnofyoume) >= 0)
+        meishere = true; // there is "me"
+      if (findKeyword(statement, "you", psnofyoume) >= 0)
+        youishere = true; //there is "you"
+      if (meishere && youishere && findKeyword(statement, "me", psnofyoume) < findKeyword(statement, "you", psnofyoume))
+        whichisfirst = "me"; // if both "me" and "you" are there, but "me" is first
+      if (meishere && youishere && findKeyword(statement, "you", psnofyoume) < findKeyword(statement, "me", psnofyoume))
+        whichisfirst = ""; // if both "me" and "you" are there, but "you" is first
+      if (meishere && !youishere)
+        whichisfirst = "me"; //if only "me" is there
+      if (youishere && !meishere)
+        whichisfirst = ""; //if only "you" is there
+      if (whichisfirst == "me") { // if the first keyword is "me"
+        int psnofme = findKeyword(statement, "me", psnofyoume);
+        String beforeme = statement.substring(0,psnofme); //part before "me"
+        String afterme = statement.substring(psnofme + 2); //part after "me"
+        statement =  beforeme + "you" + afterme;
+        psnofyoume = findKeyword(statement, "you", psnofyoume) + 1; 
+      }
+      else {
+        int psnofyou = findKeyword(statement, "you", psnofyoume); // "you" will be replaced with "me"
+        String beforeyou = statement.substring(0,psnofyou); // part before "you"
+        String afteryou = statement.substring(psnofyou + 3); // part after "you"
+        statement = beforeyou + "me" + afteryou;
+        psnofyoume = findKeyword(statement, "me", psnofyoume) + 1;
+      }
     }
-    int psn = findKeyword (statement, "are", 0);
-    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
-      statement = replaceMeWithYou(statement, psn); // replaces "me" with "you"
+    return statement;
     
-    else if (findKeyword(statement, "you", psn) > 0) { // if the sentence has "you" after "are"
-      statement = replaceYouWithMe(statement, psn); // replaces "you" with "me"
-    }
-    String isstart = statement.substring(0,psn);
-    isstart = isstart.substring(0,1).toLowerCase() + isstart.substring(1); // lowercases the first part
-    String isend = statement.substring(psn + 4);
-    return "Why are " + isstart + isend + "?";
-  } 
-  
-  /**
-   * Take a statement with "I am <something>." and transform it into 
-   * "Do you like being <something>?"
-   * In case it uses the "I am <verb>ing to" pattern, it returns a default response
-   * it replaces the object "you" with "me", and "me" with "you"
-   */
-  private String transformIAmStatement(String statement)
-  {
-    if (statement.indexOf("ing") >= 0) // checks if it's not in "I am <non-gerund>"
-      return getRandomResponse();
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    int psn = findKeyword(statement, "I am", 0);
-    if (findKeyword(statement, "me", psn) > 0)  // if the sentence has "me" after "are"
-      statement = replaceMeWithYou(statement, psn); // replaces "me" with "you"
-    
-    else if (findKeyword(statement, "you", psn) > 0) { // if the sentence has "you" after "are"
-      statement = replaceYouWithMe(statement, psn); // replaces "you" with "me"
-    }
-    String restOfStatement = statement.substring(psn + 4).trim();
-    return "Do you like being " + restOfStatement + "?";
   }
   
-  /**
-   * Take a statement with "I <something> you." and transform it into 
-   * "Why do you <something> me?"
-   */
-  private String transformIYouStatement(String statement)
-  {
-    //  Remove the final period, if there is one
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    
-    int psnOfI = findKeyword (statement, "i", 0);
-    int psnOfYou = findKeyword (statement, "you", psnOfI + 1);
-    
-    String restOfStatement = statement.substring(psnOfI + 1, psnOfYou).trim();
-    return "Why do you " + restOfStatement + " me?";
-  }
   
-  /**
-   * Take a statement with "I want to <something>." and transform it into 
-   * "What would it mean to <something>?"
-   * @param statement the user statement, assumed to contain "I want to"
-   * @return the transformed statement
-   */
-  private String transformIWantToStatement(String statement)
-  {
-    //  Remove the final period, if there is one
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    int psn = findKeyword (statement, "I want to", 0);
-    String restOfStatement = statement.substring(psn + 9).trim();
-    return "What would it mean to " + restOfStatement + "?";
-  }
   
-  /**
-   * Take a statement with "I want <something>." and transform it into 
-   * "Would you really be happy if you had <something>?"
-   */
-  private String transformIWantStatement(String statement)
-  {
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    int psn = findKeyword(statement, "I want", 0);
-    String restOfStatement = statement.substring(psn + 6).trim();
-    return "Would you really be happy if you had " + restOfStatement + "?";
-  }
-  
-  /**
-   * Take a statement with "you <something> me" and transform it into 
-   * "What makes you think that I <something> you?"
-   * @param statement the user statement, assumed to contain "you" followed by "me"
-   * @return the transformed statement
-   */
-  private String transformYouMeStatement(String statement)
-  {
-    //  Remove the final period, if there is one
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    
-    int psnOfYou = findKeyword (statement, "you", 0);
-    int psnOfMe = findKeyword (statement, "me", psnOfYou + 3);
-    
-    String restOfStatement = statement.substring(psnOfYou + 3, psnOfMe).trim();
-    return "What makes you think that I " + restOfStatement + " you?";
-  }
-  
-  //replaces the object "me" found after the verb with "you"
-  //psn is the position of the verb, to make sure "me" is an object
-  // In the sentence "He is mean to me", "me" is after the verb "is"
-  private String replaceMeWithYou (String statement, int psn) {
-    int psnofme = findKeyword(statement, "me");
-    String beforeme = statement.substring(0,psnofme); //part before "me"
-    String afterme = statement.substring(psnofme + 2); //part after "me"
-    return beforeme + "you" + afterme;
-  }
-  
-  //replaces the object "you" found after the verb with "me"
-  //psn is the position of the verb, to make sure "you" is an object
-  // In the sentence "He is mean to you", "you" is after the verb "is"
-  private String replaceYouWithMe(String statement, int psn) {
-    int psnofyou = findKeyword(statement, "you"); // "you" will be replaced with "me"
-    String beforeyou = statement.substring(0,psnofyou); // part before "you"
-    String afteryou = statement.substring(psnofyou + 3); // part after "you"
-    return beforeyou + "me" + afteryou;
-  }
   
   /**
    * Search for one word in phrase. The search is not case
@@ -670,4 +585,4 @@ public class Magpie
     "Is that so.",
     "...."
   };
-}
+  }
