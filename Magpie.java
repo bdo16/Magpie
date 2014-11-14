@@ -35,15 +35,24 @@ public class Magpie
     Random r = new Random ();
     String response = "";
     String statement = expandContraction(temp); //expands contractions
-    if (statement.trim().length() == 0)
+    statement = statement.trim(); // to stop Brent, trims at the beginning
+    if (statement.length() == 0)
     {
       response = "Say something, please.";
+    }
+    // just a funny thing
+    else if (statement.length() > 30) { //will fall asleep if the statement is too long
+      int halfwaypoint = statement.length() / 2;
+      String lastpart = statement.substring(halfwaypoint);
+      int lastword = lastpart.indexOf(" ");
+      response = "Sorry, I fell asleep around \"" + statement.substring(0, halfwaypoint + lastword) + "...\"";
     }
     else if (findKeyword(statement, "thou") >= 0)
     {
       String [] thouresponse = {
         "Are we in 16th century England?",
-        "Shakespeare called. He wants his words back."
+        "Shakespeare called. He wants his words back.",
+        "THOU ART NOT AN ENGLISH MAJOR!"
       };
       response = thouresponse[r.nextInt(thouresponse.length)];
     }
@@ -52,7 +61,8 @@ public class Magpie
       String [] aintresponse = {
         "We ain't need no bad grammar here.",
         "Don't you dare use that kind of language in front of me!",
-        "Watch your mouth."
+        "Watch your mouth.",
+        "Howdy y'all"
       };
       response = aintresponse[r.nextInt(aintresponse.length)];
     }
@@ -105,14 +115,15 @@ public class Magpie
     //Look for a (I/You/we/they <aux verb>(optional) <verb>) pattern
     
     else if (findKeyword(statement, "I") == 0 || 
-             findKeyword(statement, "You") == 0 ||
+            findKeyword(statement, "You") == 0 ||
              findKeyword(statement, "they") == 0 ||
-             findKeyword(statement, "we") == 0 )
-             //statement.substring(statement.indexOf(" ") - 1, statement.indexOf(" ")) == "s" 
-             //working on code that will check to see if it is a plural noun (Monkeys)
+            findKeyword(statement, "we") == 0 )
+             //statement.substring(statement.indexOf(" ") - 1, statement.indexOf(" ")) == "s")
+      //experimental code that will check to see if it is a plural noun (Monkeys)
     {
       response = transformPluralVerbStatement(statement);
     }
+   
     //Look for a (Why is <something>) pattern
     else if (findKeyword(statement, "Why is", 0) == 0)
     {
@@ -322,23 +333,20 @@ public class Magpie
       statementsubject = "we";
       subject = "we";
     }
-    /**
-    *
-    *  else { // just a plural subject (Monkeys eat pie)
-    *    statementsubject = statement.substring(0, statement.indexOf(" "));
-    *    subject = statement.substring(0, statement.indexOf(" "));
-    *  }
-    */
-    String restofsentence = "";
-    String auxiliary = "do";
+  // if (statement.substring(statement.indexOf(" ") - 1, statement.indexOf(" ")) == "s") { // just a plural subject (Monkeys eat pie)
+  //    statementsubject = statement.substring(0, statement.indexOf(" "));
+  //    subject = statement.substring(0, statement.indexOf(" "));
+  // }
+    String restofsentence = ""; // the part of the sentence after the subject and aux verb
+    String auxiliary = "do"; // the auxiliary verb - defaults to "do" for sentences like "I eat pizza"
     String lastChar = statement.substring(statement.length() - 1);
     if (lastChar.equals("."))
     {
       statement = statement.substring(0, statement.length() - 1);
     }
     
-    String willbreak = "break";
-    while (willbreak == "break") { // used to 
+    String willbreak = "break"; //this weird while loop is used to ensure that the aux verb is only checked once
+    while (willbreak == "break") { //as the for loop was messing up the else if statements
       
       String [] auxiliaryverbs = {
         "do",
@@ -354,7 +362,7 @@ public class Magpie
       
       if (findKeyword(statement, "I am") == 0){ // if the statement begins with (I am hungry)
         auxiliary = "are"; // the response should be "Why *are* you hungry"
-        statement = replaceYouOrMe(statement, 1);
+        statement = replaceYouOrMe(statement, 1); //switches "you" and "me" 
         restofsentence = statement.substring(findKeyword(statement, "am") + 2); // the " hungry" part
         break;
       }
@@ -366,25 +374,22 @@ public class Magpie
         break;
       }
       
-      for (int i = 0; i < auxiliaryverbs.length; i++) {
+      for (int i = 0; i < auxiliaryverbs.length; i++) { //checks through the array of aux verbs
         if (findKeyword(statement, auxiliaryverbs[i]) == statementsubject.length() + 1){ // if there is the aux verb
-          auxiliary = auxiliaryverbs[i];
+          auxiliary = auxiliaryverbs[i]; 
           statement = replaceYouOrMe(statement, 1);
           restofsentence = statement.substring(findKeyword(statement, auxiliaryverbs[i]) + auxiliaryverbs[i].length());
           break;  
         }
         else
           statement = replaceYouOrMe(statement, 1);
-        restofsentence = statement.substring(statementsubject.length());
+          restofsentence = statement.substring(statementsubject.length());
       }
-      willbreak = "notbreak";
+      willbreak = "notbreak"; // breaks out of the while loop
     } 
     
-    return "Why " + auxiliary + " " + subject + restofsentence + "?";
-    }
-  
-  
-  
+    return "Why " + auxiliary + " " + subject + restofsentence + "?"; // for example, "Why are you hungry?"
+  }
   
   
   /**
@@ -441,7 +446,7 @@ public class Magpie
   private String replaceYouOrMe (String statement, int psn) {     
     int psnofyoume = psn;
     while (findKeyword(statement, "me", psnofyoume) > 0 || findKeyword(statement, "you", psnofyoume) > 0)
-    {
+    { // while there is still a "me"or "you" that was unchanged 
       String whichisfirst = ""; // "me" if "me" comes first, and "" if "you" comes first
       Boolean meishere = false; //whether "me" is found from the index psnofyoume
       Boolean youishere = false;//whether "you" is found from the index psnofyoume
@@ -473,10 +478,7 @@ public class Magpie
       }
     }
     return statement;
-    
   }
-  
-  
   
   
   /**
@@ -585,4 +587,4 @@ public class Magpie
     "Is that so.",
     "...."
   };
-  }
+}

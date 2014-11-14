@@ -30,27 +30,40 @@ public class Magpie
    *            the user statement
    * @return a response based on the rules given
    */
-  public String getResponse(String statement)
+  public String getResponse(String temp)
   {
+    Random r = new Random ();
     String response = "";
+    String statement = expandContraction(temp); //expands contractions
     if (statement.trim().length() == 0)
     {
       response = "Say something, please.";
     }
-    else if (findKeyword(statement, "I will") >= 0
-               || findKeyword(statement, "you will") >= 0
-               || findKeyword(statement, "it will") >= 0
-               || findKeyword(statement, "he will") >= 0
-               || findKeyword(statement, "she will") >= 0
-               || findKeyword(statement, "we will") >= 0
-               || findKeyword(statement, "they will") >= 0)
+    else if (findKeyword(statement, "thou") >= 0)
     {
-      response = "How can you be so sure of the future?";
+      String [] thouresponse = {
+        "Are we in 16th century England?",
+        "Shakespeare called. He wants his words back."
+      };
+      response = thouresponse[r.nextInt(thouresponse.length)];
+    }
+    else if (findKeyword(statement, "ain't") >= 0)
+    {
+      String [] aintresponse = {
+        "We ain't need no bad grammar here.",
+        "Don't you dare use that kind of language in front of me!",
+        "Watch your mouth."
+      };
+      response = aintresponse[r.nextInt(aintresponse.length)];
     }
     else if (findKeyword(statement,"mr. kiang") >= 0
                || findKeyword(statement, "mr. landgraf") >= 0)
     {
-      response = "Oh, he's a chill guy.";
+      String [] teacherresponse = {
+        "Oh, he's a chill guy.",
+        "Comp Sci is so much fun when he teaches!"
+      };
+      response = teacherresponse[r.nextInt(teacherresponse.length)];
     }
     else if (findKeyword(statement,"no")>= 0)
     {
@@ -58,16 +71,21 @@ public class Magpie
     }
     else if (findKeyword(statement,"bobby") >= 0)
     {
-      response = "Oh, Bobby? He's a cool guy, don't you think?";
+      response = "He's awesome, nuff said.";
     }
     else if (findKeyword(statement,"ting") >= 0)
     {
-      response = "Oh, Ting? I heard he's usually toast.";
+      String [] tingresponse = {
+        "He's toast.",
+        "He's pretty cool.",
+        "He's usually toast, but sometimes bread."
+      };
+      response = tingresponse[r.nextInt(tingresponse.length)];
     }
     else if (findKeyword(statement,"melanie") >= 0
                ||findKeyword(statement,"mel") >= 0)
     {
-      response = "Oh, Melanie? I heard she's an infinite elephant.";
+      response = "INFINITELEPHANT!!!";
     }
     else if (findKeyword(statement,"mother") >= 0
                || findKeyword(statement,"father") >= 0
@@ -83,37 +101,30 @@ public class Magpie
     }
     
     // Responses which require transformations
-       
-    //Look for a (I am <something>) pattern
-    else if (findKeyword(statement, "I am", 0) >= 0)
+    
+    //Look for a (I/You/we/they <aux verb>(optional) <verb>) pattern
+    
+    else if (findKeyword(statement, "I") == 0 || 
+             findKeyword(statement, "You") == 0 ||
+             findKeyword(statement, "they") == 0 ||
+             findKeyword(statement, "we") == 0 )
+             //statement.substring(statement.indexOf(" ") - 1, statement.indexOf(" ")) == "s" 
+             //working on code that will check to see if it is a plural noun (Monkeys)
     {
-      response = transformIAmStatement(statement);
+      response = transformPluralVerbStatement(statement);
+    }
+    //Look for a (Why is <something>) pattern
+    else if (findKeyword(statement, "Why is", 0) == 0)
+    {
+      response = transformWhyIsStatement(statement);
     }
     
-    //Look for a two word (I <something> you) pattern
-    else if (findKeyword(statement, "i", 0) >= 0 && findKeyword(statement, "you", findKeyword(statement, "i", 0)) >= 0)
+    //Look for a (<something> is <something>) pattern
+    else if (findKeyword(statement, "is", 0) >= 0)
     {
-      response = transformIYouStatement(statement);
+      response = transformIsStatement(statement);
     }
     
-    //Look for a (I want to <something>) pattern
-    else if (findKeyword(statement, "I want to", 0) >= 0)
-    {
-      response = transformIWantToStatement(statement);
-    }
-    
-    //Look for a (I want <something>) pattern
-    else if (findKeyword(statement, "I want", 0) >= 0)
-    {
-      response = transformIWantStatement(statement);
-    }
-    
-    //Look for a (You <something> me) pattern
-    else if (findKeyword(statement, "you", 0) >= 0 && findKeyword(statement, "me", findKeyword(statement, "you", 0)) >= 0)
-    {
-      response = transformYouMeStatement(statement);
-    }
-
     //else returns default response
     else
     {
@@ -122,67 +133,290 @@ public class Magpie
     return response;
   }
   
+  
+  
+  
+  //expands contractions
+  public String expandContraction(String statement)
+  {
+    String temp = statement;
+    
+    //expands can't <- exception
+    while (findKeyword(temp, "can't") >= 0) {
+      int psn = findKeyword(temp, "can't"); //the position of the contraction
+      String beginning = temp.substring(0,psn); //the piece before the contraction
+      String contraction = "can't"; //the contraction
+      String end = temp.substring(psn + 5); // the piece after the contraction
+      contraction = contraction.substring(0,contraction.length() - 2) + "not"; //expands the contraction
+      temp = beginning + contraction + end; //pieces together the new contraction
+    }
+    
+    //expands I'm <- exception
+    while (findKeyword(temp, "I'm") >= 0) {
+      int psn = findKeyword(temp, "I'm"); //the position of the contraction
+      String beginning = temp.substring(0,psn); //the piece before the contraction
+      String contraction = "I'm"; //the contraction
+      String end = temp.substring(psn + 3); // the piece after the contraction
+      contraction = contraction.substring(0,contraction.length() - 2) + " am"; //expands the contraction
+      temp = beginning + contraction + end; //pieces together the new contraction
+    }
+    
+    String [] nPattern = { // the words that follow the pattern <something>n't = <something> not
+      "aren't",
+      "couldn't",
+      "didn't",
+      "doesn't",
+      "don't",
+      "hadn't",
+      "hasn't",
+      "haven't",
+      "shouldn't",
+      "weren't",
+      "wouldn't",
+      "isn't",
+      "mustn't",
+      "mightn't"
+    };
+    
+    //expands all the contractions with the <something>n't pattern
+    for (int i = 0; i < nPattern.length; i++) {
+      while (findKeyword(temp, nPattern[i]) >= 0) { //while there are still contractions
+        int psn = findKeyword(temp, nPattern[i]); //the position of the contraction
+        String beginning = temp.substring(0,psn); //the piece before the contraction
+        String contraction = temp.substring(psn,psn + nPattern[i].length()); //the contraction
+        String end = temp.substring(psn + contraction.length()); // the piece after the contraction
+        contraction = contraction.substring(0,contraction.length() - 3) + " not"; //expands the contraction
+        temp = beginning + contraction + end; //pieces together the new contraction
+      }
+    }
+    
+    String [] rePattern = { // the words that follow the pattern <something>'re = <something> are
+      "you're",
+      "we're",
+      "they're"
+    };
+    
+    //expands all the contractions with the <something>'re pattern
+    for (int i = 0; i < rePattern.length; i++) {
+      while (findKeyword(temp, rePattern[i]) >= 0) { //while there are still contractions
+        int psn = findKeyword(temp, rePattern[i]); //the position of the contraction
+        String beginning = temp.substring(0,psn); //the piece before the contraction
+        String contraction = temp.substring(psn,psn + rePattern[i].length()); //the contraction
+        String end = temp.substring(psn + contraction.length()); // the piece after the contraction
+        contraction = contraction.substring(0,contraction.length() - 3) + " are"; //expands the contraction
+        temp = beginning + contraction + end; //pieces together the new contraction
+      }
+    }
+    
+    String [] sPattern = { // the words that follow the pattern <something>'s = <something> is
+      "he's",
+      "she's",
+      "it's",
+      "that's",
+      "who's",
+      "what's",
+      "when's",
+      "where's",
+      "why's",
+      "how's"
+    };
+    
+    //expands all the contractions with the <something>'s pattern
+    for (int i = 0; i < sPattern.length; i++) {
+      while (findKeyword(temp, sPattern[i]) >= 0) { //while there are still contractions
+        int psn = findKeyword(temp, sPattern[i]); //the position of the contraction
+        String beginning = temp.substring(0,psn); //the piece before the contraction
+        String contraction = temp.substring(psn,psn + sPattern[i].length()); //the contraction
+        String end = temp.substring(psn + contraction.length()); // the piece after the contraction
+        contraction = contraction.substring(0,contraction.length() - 2) + " is"; //expands the contraction
+        temp = beginning + contraction + end; //pieces together the new contraction
+      }
+    }
+    
+    String [] willPattern = { // the words that follow the pattern <something>'ll = <something> will
+      "I'll",
+      "you'll",
+      "he'll",
+      "she'll",
+      "it'll",
+      "we'll",
+      "they'll",
+      "that'll",
+      "who'll",
+      "what'll",
+      "when'll",
+      "where'll",
+      "why'll",
+      "how'll"
+    };
+    
+    //expands all the contractions with the <something>'ll pattern
+    for (int i = 0; i < willPattern.length; i++) {
+      while (findKeyword(temp, willPattern[i]) >= 0) { //while there are still contractions
+        int psn = findKeyword(temp, willPattern[i]); //the position of the contraction
+        String beginning = temp.substring(0,psn); //the piece before the contraction
+        String contraction = temp.substring(psn,psn + willPattern[i].length()); //the contraction
+        String end = temp.substring(psn + contraction.length()); // the piece after the contraction
+        contraction = contraction.substring(0,contraction.length() - 3) + " will"; //expands the contraction
+        temp = beginning + contraction + end; //pieces together the new contraction
+      }
+    }
+    
+    String [] vePattern = { // the words that follow the pattern <something>'ve = <something> have
+      "I've",
+      "you've",
+      "we've",
+      "they've",
+      "would've",
+      "should've",
+      "could've",
+      "might've",
+      "must've"
+    };
+    
+    //expands all the contractions with the <something>'ve pattern
+    for (int i = 0; i < vePattern.length; i++) {
+      while (findKeyword(temp, vePattern[i]) >= 0) { //while there are still contractions
+        int psn = findKeyword(temp, vePattern[i]); //the position of the contraction
+        String beginning = temp.substring(0,psn); //the piece before the contraction
+        String contraction = temp.substring(psn,psn + vePattern[i].length()); //the contraction
+        String end = temp.substring(psn + contraction.length()); // the piece after the contraction
+        contraction = contraction.substring(0,contraction.length() - 3) + " have"; //expands the contraction
+        temp = beginning + contraction + end; //pieces together the new contraction
+      }
+    }
+    
+    return temp;
+  }
+  
+  
+  
+  
+  
   /**
-   * Take a statement with "I want to <something>." and transform it into 
-   * "What would it mean to <something>?"
-   * @param statement the user statement, assumed to contain "I want to"
-   * @return the transformed statement
+   *transforms a "<plural noun> <aux> <statement>" statement to "Why <aux> <plural> <statement>?"
+   * for example, "I will eat pie" becomes "Why will you eat pie?"
    */
-  private String transformIWantToStatement(String statement)
+  private String transformPluralVerbStatement(String statement) // for a I <aux> <verb> statement
+  {
+    statement = statement.trim();
+    String statementsubject = ""; // the subject in the sentence (*I* eat cake)
+    String subject = ""; // the subject used in the response (Why do *you* eat cake?)
+    if (findKeyword(statement, "I") == 0)
+    {
+      statementsubject = "I";
+      subject = "you";
+    }
+    if (findKeyword(statement, "You") == 0)
+    {
+      statementsubject = "you";
+      subject = "I";
+    }
+    if (findKeyword(statement, "They") == 0)
+    {
+      statementsubject = "they";
+      subject = "they";
+    }
+    if (findKeyword(statement, "we") == 0)
+    {
+      statementsubject = "we";
+      subject = "we";
+    }
+    /**
+    *
+    *  else { // just a plural subject (Monkeys eat pie)
+    *    statementsubject = statement.substring(0, statement.indexOf(" "));
+    *    subject = statement.substring(0, statement.indexOf(" "));
+    *  }
+    */
+    String restofsentence = "";
+    String auxiliary = "do";
+    String lastChar = statement.substring(statement.length() - 1);
+    if (lastChar.equals("."))
+    {
+      statement = statement.substring(0, statement.length() - 1);
+    }
+    
+    String willbreak = "break";
+    while (willbreak == "break") { // used to 
+      
+      String [] auxiliaryverbs = {
+        "do",
+        "can",
+        "could",
+        "might",
+        "must",
+        "shall",
+        "will",
+        "would",
+        "are" // will not be tested for "you" as the subject
+      };
+      
+      if (findKeyword(statement, "I am") == 0){ // if the statement begins with (I am hungry)
+        auxiliary = "are"; // the response should be "Why *are* you hungry"
+        statement = replaceYouOrMe(statement, 1);
+        restofsentence = statement.substring(findKeyword(statement, "am") + 2); // the " hungry" part
+        break;
+      }
+      
+      if (findKeyword(statement, "You are") == 0){ // if the statement begins with (You are hungry)
+        auxiliary = "am"; // the response should be "Why *am* I hungry"
+        statement = replaceYouOrMe(statement, 1);
+        restofsentence = statement.substring(findKeyword(statement, "are") + 3); // the " hungry" part
+        break;
+      }
+      
+      for (int i = 0; i < auxiliaryverbs.length; i++) {
+        if (findKeyword(statement, auxiliaryverbs[i]) == statementsubject.length() + 1){ // if there is the aux verb
+          auxiliary = auxiliaryverbs[i];
+          statement = replaceYouOrMe(statement, 1);
+          restofsentence = statement.substring(findKeyword(statement, auxiliaryverbs[i]) + auxiliaryverbs[i].length());
+          break;  
+        }
+        else
+          statement = replaceYouOrMe(statement, 1);
+        restofsentence = statement.substring(statementsubject.length());
+      }
+      willbreak = "notbreak";
+    } 
+    
+    return "Why " + auxiliary + " " + subject + restofsentence + "?";
+    }
+  
+  
+  
+  
+  
+  /**
+   * Take a statement with "Why is <something>." and transform it into 
+   * "Is <something>? I humbly suggest you go Google it."
+   * replaces the object "you" with "me", and the object "me" with "you"
+   */
+  private String transformWhyIsStatement(String statement)
   {
     //  Remove the final period, if there is one
     statement = statement.trim();
     String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
+    if (lastChar.equals("?"))
     {
       statement = statement.substring(0, statement.length() - 1);
     }
-    int psn = findKeyword (statement, "I want to", 0);
-    String restOfStatement = statement.substring(psn + 9).trim();
-    return "What would it mean to " + restOfStatement + "?";
-  }
-  
-  private String transformIWantStatement(String statement)
-  {
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    int psn = findKeyword(statement, "I want", 0);
+    int psn = findKeyword (statement, "Why is", 0);
+    statement = replaceYouOrMe(statement, psn);
     String restOfStatement = statement.substring(psn + 6).trim();
-    return "Would you really be happy if you had " + restOfStatement + "?";
+    return "Is " + restOfStatement + "? I humbly suggest you go Google it.";
   }
   
   
- /**
-   * Take a statement with "I am <something>." and transform it into 
-   * "Do you like being <something>?"
-   * In case it uses the "I am <verb>ing to" pattern, it returns a default response
-   */
-  private String transformIAmStatement(String statement)
-  {
-    if (statement.indexOf("ing") >= 0) // checks if it's not in "I am <non-gerund>"
-      return getRandomResponse();
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
-    {
-      statement = statement.substring(0, statement.length() - 1);
-    }
-    int psn = findKeyword(statement, "I am", 0);
-    String restOfStatement = statement.substring(psn + 4).trim();
-    return "Do you like being " + restOfStatement + "?";
-  }
+  
   
   /**
-   * Take a statement with "you <something> me" and transform it into 
-   * "What makes you think that I <something> you?"
-   * @param statement the user statement, assumed to contain "you" followed by "me"
-   * @return the transformed statement
+   * Take a statement with "<something1> is <something2>." and transform it into 
+   * "Why is <something1> <something2>?"
+   * If object is "you", it is replaced with "me"
+   * If object is "me", it is replaced with "you"
    */
-  private String transformYouMeStatement(String statement)
+  private String transformIsStatement(String statement)
   {
     //  Remove the final period, if there is one
     statement = statement.trim();
@@ -191,31 +425,58 @@ public class Magpie
     {
       statement = statement.substring(0, statement.length() - 1);
     }
-    
-    int psnOfYou = findKeyword (statement, "you", 0);
-    int psnOfMe = findKeyword (statement, "me", psnOfYou + 3);
-    
-    String restOfStatement = statement.substring(psnOfYou + 3, psnOfMe).trim();
-    return "What makes you think that I " + restOfStatement + " you?";
+    int psn = findKeyword (statement, "is", 0);
+    statement = replaceYouOrMe(statement, psn);
+    String isstart = statement.substring(0,psn);
+    isstart = isstart.substring(0,1).toLowerCase() + isstart.substring(1); // lowercases the first part
+    String isend = statement.substring(psn + 3);
+    return "Why is " + isstart + isend + "?";
   }
   
   
-  private String transformIYouStatement(String statement)
-  {
-    //  Remove the final period, if there is one
-    statement = statement.trim();
-    String lastChar = statement.substring(statement.length() - 1);
-    if (lastChar.equals("."))
+  
+  
+  
+  //checks from the starting index psn and switches all "you"s and "me"s
+  private String replaceYouOrMe (String statement, int psn) {     
+    int psnofyoume = psn;
+    while (findKeyword(statement, "me", psnofyoume) > 0 || findKeyword(statement, "you", psnofyoume) > 0)
     {
-      statement = statement.substring(0, statement.length() - 1);
+      String whichisfirst = ""; // "me" if "me" comes first, and "" if "you" comes first
+      Boolean meishere = false; //whether "me" is found from the index psnofyoume
+      Boolean youishere = false;//whether "you" is found from the index psnofyoume
+      if (findKeyword(statement, "me", psnofyoume) >= 0)
+        meishere = true; // there is "me"
+      if (findKeyword(statement, "you", psnofyoume) >= 0)
+        youishere = true; //there is "you"
+      if (meishere && youishere && findKeyword(statement, "me", psnofyoume) < findKeyword(statement, "you", psnofyoume))
+        whichisfirst = "me"; // if both "me" and "you" are there, but "me" is first
+      if (meishere && youishere && findKeyword(statement, "you", psnofyoume) < findKeyword(statement, "me", psnofyoume))
+        whichisfirst = ""; // if both "me" and "you" are there, but "you" is first
+      if (meishere && !youishere)
+        whichisfirst = "me"; //if only "me" is there
+      if (youishere && !meishere)
+        whichisfirst = ""; //if only "you" is there
+      if (whichisfirst == "me") { // if the first keyword is "me"
+        int psnofme = findKeyword(statement, "me", psnofyoume);
+        String beforeme = statement.substring(0,psnofme); //part before "me"
+        String afterme = statement.substring(psnofme + 2); //part after "me"
+        statement =  beforeme + "you" + afterme;
+        psnofyoume = findKeyword(statement, "you", psnofyoume) + 1; 
+      }
+      else {
+        int psnofyou = findKeyword(statement, "you", psnofyoume); // "you" will be replaced with "me"
+        String beforeyou = statement.substring(0,psnofyou); // part before "you"
+        String afteryou = statement.substring(psnofyou + 3); // part after "you"
+        statement = beforeyou + "me" + afteryou;
+        psnofyoume = findKeyword(statement, "me", psnofyoume) + 1;
+      }
     }
+    return statement;
     
-    int psnOfI = findKeyword (statement, "i", 0);
-    int psnOfYou = findKeyword (statement, "you", psnOfI + 1);
-    
-    String restOfStatement = statement.substring(psnOfI + 1, psnOfYou).trim();
-    return "Why do you " + restOfStatement + " me?";
   }
+  
+  
   
   
   /**
@@ -309,8 +570,8 @@ public class Magpie
    */
   private String getRandomResponse ()
   {
-    Random r = new Random ();
-    return randomResponses [r.nextInt(randomResponses.length)];
+    Random q = new Random ();
+    return randomResponses [q.nextInt(randomResponses.length)];
   }
   
   private String [] randomResponses = {
@@ -321,6 +582,7 @@ public class Magpie
     "Uh huh.",
     "I see.",
     "If you say so.",
-    "Is that so."
+    "Is that so.",
+    "...."
   };
-}
+  }
